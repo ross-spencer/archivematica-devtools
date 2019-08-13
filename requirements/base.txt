@@ -1,0 +1,2 @@
+git+git://github.com/ross-spencer/python-gearman@dcf4d7ef69bc4e280838330ba9c2dcdd7a7516af#egg=gearman3
+
