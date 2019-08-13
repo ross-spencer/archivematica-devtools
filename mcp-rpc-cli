@@ -45,7 +45,7 @@ class MCPClient:
 
     def list(self):
         gm_client = gearman.GearmanClient([self.server])
-        completed_job_request = gm_client.submit_job("getJobsAwaitingApproval", "", None)
+        completed_job_request = gm_client.submit_job("getJobsAwaitingApproval", cPickle.dumps(""), None)
         #self.check_request_status(completed_job_request)
         return cPickle.loads(completed_job_request.result)
 
