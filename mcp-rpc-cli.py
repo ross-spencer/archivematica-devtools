@@ -27,26 +27,35 @@ try:
 except ModuleNotFoundError:
     import _pickle as cPickle
 
+try:
+    input = raw_input
+except NameError:
+    pass
+
 import lxml.etree as etree
 import traceback
 import os
 import time
 import sys
 
+
 class Settings:
-    MCP_SERVER = ('localhost', 62004)
+    MCP_SERVER = ("localhost", 62004)
+
 
 settings = Settings()
 
-class MCPClient:
 
+class MCPClient:
     def __init__(self, host=settings.MCP_SERVER[0], port=settings.MCP_SERVER[1]):
         self.server = "%s:%d" % (host, port)
 
     def list(self):
         gm_client = gearman.GearmanClient([self.server])
-        completed_job_request = gm_client.submit_job("getJobsAwaitingApproval", cPickle.dumps(""), None)
-        #self.check_request_status(completed_job_request)
+        completed_job_request = gm_client.submit_job(
+            "getJobsAwaitingApproval", "", None
+        )
+        # self.check_request_status(completed_job_request)
         return cPickle.loads(completed_job_request.result)
 
     def execute(self, uuid, choice):
@@ -55,33 +64,34 @@ class MCPClient:
         data["jobUUID"] = uuid
         data["chain"] = choice
         data["uid"] = "1"
-        completed_job_request = gm_client.submit_job("approveJob", cPickle.dumps(data), None)
-        #self.check_request_status(completed_job_request)
+        completed_job_request = gm_client.submit_job(
+            "approveJob", cPickle.dumps(data), None
+        )
+        # self.check_request_status(completed_job_request)
         return
+
 
 mcpClient = MCPClient()
 
-def getTagged(root, tag): #bad, I use this elsewhere, should be imported
+
+def getTagged(root, tag):  # bad, I use this elsewhere, should be imported
     ret = []
     for element in root:
         if element.tag == tag:
             ret.append(element)
-            return ret #only return the first encounter
+            return ret  # only return the first encounter
     return ret
 
-def updateJobsAwaitingApproval(jobsAwaitingApproval):
-    del jobsAwaitingApproval
-    ret = mcpClient.list()
-    jobsAwaitingApproval = etree.XML(ret)
-    return jobsAwaitingApproval
+
+def updateJobsAwaitingApproval():
+    return etree.XML(mcpClient.list())
+
 
 def printJobsAwaitingApproval(jobsAwaitingApproval):
-    i = 0
-    #print len(jobsAwaitingApproval)
-    for job in jobsAwaitingApproval:
+    for i, job in enumerate(jobsAwaitingApproval):
         print(i)
-        i += 1
-        print(etree.tostring(job, pretty_print=True))
+        print(etree.tostring(job, pretty_print=True, encoding="unicode"))
+
 
 def approveJob(jobsAwaitingApproval, choice, choice2):
     try:
@@ -89,13 +99,19 @@ def approveJob(jobsAwaitingApproval, choice, choice2):
         if index >= len(jobsAwaitingApproval):
             print("index out of range")
             return
-        sipUUID = getTagged(getTagged(getTagged(jobsAwaitingApproval[index], "unit")[0], \
-                                   "unitXML")[0], \
-                                   "UUID")[0].text
+        sipUUID = getTagged(
+            getTagged(getTagged(jobsAwaitingApproval[index], "unit")[0], "unitXML")[0],
+            "UUID",
+        )[0].text
         uuid = getTagged(jobsAwaitingApproval[index], "UUID")[0].text
-
-        chain = getTagged(getTagged(jobsAwaitingApproval[index], "choices")[0][int(choice2)], \
-                                   "chainAvailable")[0].text
+        try:
+            chain = getTagged(
+                getTagged(jobsAwaitingApproval[index], "choices")[0][int(choice2)],
+                "chainAvailable",
+            )[0].text
+        except IndexError:
+            # Invalid choice, but no reason to fail catastrophically.
+            return
         print("Approving: " + uuid, chain, sipUUID)
         mcpClient.execute(uuid, chain)
         del jobsAwaitingApproval[index]
@@ -105,37 +121,43 @@ def approveJob(jobsAwaitingApproval, choice, choice2):
         return
 
 
-if __name__ == '__main__':
+def main():
+    """Primary entry point for this script"""
     os.system("clear")
-    jobsAwaitingApproval = etree.Element("jobsAwaitingApproval")
-    jobsAwaitingApproval = updateJobsAwaitingApproval(jobsAwaitingApproval)
-    #print etree.tostring(jobsAwaitingApproval)
+    jobsAwaitingApproval = updateJobsAwaitingApproval()
     choice = "No-op"
     while choice != "q":
         while not (len(jobsAwaitingApproval)):
             print("Fetching...")
             time.sleep(2)
-            jobsAwaitingApproval = updateJobsAwaitingApproval(jobsAwaitingApproval)
+            jobsAwaitingApproval = updateJobsAwaitingApproval()
         printJobsAwaitingApproval(jobsAwaitingApproval)
         print("q to quit")
         print("u to update List")
         print("number to approve Job")
-        choice = raw_input('Please enter a value:')
+        choice = input("Please enter a value:")
         print("choice: " + choice)
         if choice == "u":
-            jobsAwaitingApproval = updateJobsAwaitingApproval(jobsAwaitingApproval)
+            jobsAwaitingApproval = updateJobsAwaitingApproval()
         else:
             if choice == "q":
                 break
             choice2 = "No-op"
             while choice2 != "q":
-                #try:
-                printJobsAwaitingApproval(jobsAwaitingApproval[int(choice)][2])
-                choice2 = raw_input('Please enter a value:')
+                try:
+                    printJobsAwaitingApproval(jobsAwaitingApproval[int(choice)][2])
+                except IndexError:
+                    # Invalid choice, simply go back to main loop.
+                    break
+                choice2 = input("Please enter a value:")
                 print("choice2: " + choice2)
                 approveJob(jobsAwaitingApproval, choice, choice2)
                 choice2 = "q"
-                #except:
-                #print "invalid choice"
-                #choice2 = "q"
+                # except:
+                # print "invalid choice"
+                # choice2 = "q"
         os.system("clear")
+
+
+if __name__ == "__main__":
+    main()
