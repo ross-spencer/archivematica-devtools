@@ -1,2 +1,12 @@
-git+git://github.com/ross-spencer/python-gearman@dcf4d7ef69bc4e280838330ba9c2dcdd7a7516af#egg=gearman3
+
+# Old package.
+# gearman==2.0.2
+
+# Personal Gearman dev-branch.
+# git+git://github.com/ross-spencer/python-gearman@ebfdee8217690d4631585ecc7f2655084aa5bd4d#egg=gearman3
+
+# Original Gearman3.
+gearman3==0.1.0
+
 lxml
+six
