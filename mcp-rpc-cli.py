@@ -65,7 +65,7 @@ class MCPClient:
         data["chain"] = choice
         data["uid"] = "1"
         completed_job_request = gm_client.submit_job(
-            "approveJob", cPickle.dumps(data), None
+            "approveJob", cPickle.dumps(data, protocol=0), None
         )
         # self.check_request_status(completed_job_request)
         return

@@ -3,10 +3,10 @@
 # gearman==2.0.2
 
 # Personal Gearman dev-branch.
-# git+git://github.com/ross-spencer/python-gearman@ebfdee8217690d4631585ecc7f2655084aa5bd4d#egg=gearman3
+git+git://github.com/ross-spencer/python-gearman@ebfdee8217690d4631585ecc7f2655084aa5bd4d#egg=gearman3
 
 # Original Gearman3.
-gearman3==0.1.0
+# gearman3==0.1.0
 
 lxml
 six
