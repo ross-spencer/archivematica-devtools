@@ -64,6 +64,7 @@ class MCPClient:
         data["jobUUID"] = uuid
         data["chain"] = choice
         data["uid"] = "1"
+        data["user_id"] = "1"
         completed_job_request = gm_client.submit_job(
             "approveJob", cPickle.dumps(data, protocol=0), None
         )
